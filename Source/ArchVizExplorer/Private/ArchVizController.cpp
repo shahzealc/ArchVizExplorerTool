@@ -405,12 +405,6 @@ void AArchVizController::SetUpBuildingInputComponent() {
 	BuildingMappingContext->MapKey(BuildingRotateWall, EKeys::R);
 	BuildingMappingContext->MapKey(BuildingDeleteWall, EKeys::Delete);
 
-	//
-	BuildingMouseDrag = NewObject<UInputAction>(this);
-	BuildingMouseDrag->ValueType = EInputActionValueType::Axis2D;
-	BuildingMappingContext->MapKey(BuildingMouseDrag, EKeys::Mouse2D);
-	//
-
 	UEnhancedInputComponent* EIC = Cast<UEnhancedInputComponent>(InputComponent);
 
 	SetShowMouseCursor(true);
@@ -422,11 +416,6 @@ void AArchVizController::SetUpBuildingInputComponent() {
 	EIC->BindAction(BuildingMiddleMouseButton, ETriggerEvent::Completed, this, &AArchVizController::BuildingMiddleMouseLogic);
 	EIC->BindAction(BuildingRotateWall, ETriggerEvent::Completed, this, &AArchVizController::RotateWall);
 	EIC->BindAction(BuildingDeleteWall, ETriggerEvent::Completed, this, &AArchVizController::DestroyWall);
-
-
-	//
-	EIC->BindAction(BuildingMouseDrag, ETriggerEvent::Triggered, this, &AArchVizController::BuildingMouseDragLogic);
-	//
 
 
 	ULocalPlayer* LocalPlayer = GetLocalPlayer();
@@ -491,13 +480,8 @@ void AArchVizController::BuildingLeftMouseLogic() {
 	DisableRendering(SelectedWallStaticMesh);
 	bMoveWall = false;
 
-	//if (BuildingMode == EBuildingMode::Wall)
-	//	PlaceWall();
-	//
-	if (BuildingMode == EBuildingMode::Wall && bMoveWall) {
+	if (BuildingMode == EBuildingMode::Wall)
 		PlaceWall();
-	}
-	//
 	else if (BuildingMode == EBuildingMode::Roof)
 		StoreRoofPoints();
 	else if (BuildingMode == EBuildingMode::Floor)
@@ -508,45 +492,6 @@ void AArchVizController::BuildingLeftMouseLogic() {
 		SelectWallSegment();
 
 }
-
-void AArchVizController::BuildingMouseDragLogic(const FInputActionValue& Value) {
-	if (BuildingMode == EBuildingMode::Wall && bMoveWall) {
-		FVector2D DragDelta = Value.Get<FVector2D>();
-
-		FVector CursorWorldLocation;
-		FVector CursorWorldDirection;
-		DeprojectMousePositionToWorld(CursorWorldLocation, CursorWorldDirection);
-
-		FHitResult HitResult;
-		FCollisionQueryParams TraceParams(FName(TEXT("LineTrace")), true, WallActor);
-
-		if (GetWorld()->LineTraceSingleByChannel(HitResult, CursorWorldLocation, CursorWorldLocation + CursorWorldDirection * 10000, ECC_Visibility, TraceParams)) {
-			FVector NewLocation = HitResult.Location;
-			NewLocation.Z = BuildingUserWidgetHandler->CurrentStorey * 312;
-
-			// Calculate the length of the wall
-			float WallLength = FVector::Dist(WallStartLocation, NewLocation);
-
-			// Calculate the number of segments based on the length
-			int32 NewSegments = FMath::Max(1, FMath::FloorToInt(WallLength / 114.0f));
-
-			// Update the wall segments if needed
-			if (NewSegments != WallActor->GetNumSegments()) {
-				GEngine->AddOnScreenDebugMessage(-1, 2, FColor::Black, FString::FromInt(NewSegments));
-				ChangeSegment(NewSegments);
-			}
-
-			// Update the wall location and rotation
-			FVector WallDirection = (NewLocation - WallStartLocation).GetSafeNormal();
-			FRotator NewRotation = WallDirection.Rotation();
-			WallActor->SetActorLocationAndRotation(WallStartLocation, NewRotation);
-			//WallActor->SetActorScale3D(FVector(WallLength / 114.0f, 1.0f, 1.0f));
-
-			SnapWall();
-		}
-	}
-}
-
 
 void AArchVizController::BuildingMiddleMouseLogic() {
 	if (BuildingMode == EBuildingMode::Wall)
@@ -666,24 +611,24 @@ void AArchVizController::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 
-	//if (ConstructionMode == EConstructionMode::Building) {
-	//	if (IsValid(WallActor) && bMoveWall) {
-	//		FHitResult HitResult;
-	//		FCollisionQueryParams TraceParams(FName(TEXT("LineTrace")), true, WallActor);
+	if (ConstructionMode == EConstructionMode::Building) {
+		if (IsValid(WallActor) && bMoveWall) {
+			FHitResult HitResult;
+			FCollisionQueryParams TraceParams(FName(TEXT("LineTrace")), true, WallActor);
 
-	//		FVector CursorWorldLocation;
-	//		FVector CursorWorldDirection;
-	//		DeprojectMousePositionToWorld(CursorWorldLocation, CursorWorldDirection);
+			FVector CursorWorldLocation;
+			FVector CursorWorldDirection;
+			DeprojectMousePositionToWorld(CursorWorldLocation, CursorWorldDirection);
 
-	//		if (GetWorld()->LineTraceSingleByChannel(HitResult, CursorWorldLocation, CursorWorldLocation + CursorWorldDirection * 10000, ECC_Visibility, TraceParams)) {
-	//			FVector NewLocation = HitResult.Location;
-	//			//NewLocation.Z = 0;
-	//			NewLocation.Z = BuildingUserWidgetHandler->CurrentStorey * 312;
-	//			WallActor->SetActorRelativeLocation(NewLocation);
-	//			SnapWall();
-	//		}
-	//	}
-	//}
+			if (GetWorld()->LineTraceSingleByChannel(HitResult, CursorWorldLocation, CursorWorldLocation + CursorWorldDirection * 10000, ECC_Visibility, TraceParams)) {
+				FVector NewLocation = HitResult.Location;
+				NewLocation.Z = 0;
+				NewLocation.Z = BuildingUserWidgetHandler->CurrentStorey * 312;
+				WallActor->SetActorRelativeLocation(NewLocation);
+				SnapWall();
+			}
+		}
+	}
 	if (ConstructionMode == EConstructionMode::Interior) {
 		if (IsValid(InteriorActor) && bMoveInterior) {
 			FHitResult HitResult;
@@ -774,29 +719,9 @@ void AArchVizController::SelectWindow() {
 
 }
 
-//void AArchVizController::BuildingRightMouseLogic()
-//{
-//	if (BuildingMode == EBuildingMode::Wall)
-//		NewWall();
-//}
-
 void AArchVizController::BuildingRightMouseLogic() {
 	if (BuildingMode == EBuildingMode::Wall) {
-		FVector CursorWorldLocation;
-		FVector CursorWorldDirection;
-		DeprojectMousePositionToWorld(CursorWorldLocation, CursorWorldDirection);
-
-		FHitResult HitResult;
-		FCollisionQueryParams TraceParams(FName(TEXT("LineTrace")), true);
-
-		if (GetWorld()->LineTraceSingleByChannel(HitResult, CursorWorldLocation, CursorWorldLocation + CursorWorldDirection * 10000, ECC_Visibility, TraceParams)) {
-			FVector SpawnLocation_ = HitResult.Location;
-			SpawnLocation_.Z = BuildingUserWidgetHandler->CurrentStorey * 312;
-
-			WallActor = GetWorld()->SpawnActor<AWallActor>(AWallActor::StaticClass(), SpawnLocation_, FRotator::ZeroRotator);
-			bMoveWall = true;
-			WallStartLocation = SpawnLocation_;
-		}
+		NewWall();
 	}
 }
 

@@ -200,13 +200,6 @@ public:
 	UPROPERTY()
 	class UInputAction* BuildingDeleteWall;
 
-	//
-	UPROPERTY()
-	class UInputAction* BuildingMouseDrag;
-
-	FVector WallStartLocation;
-	//
-
 
 	UPROPERTY()
 	AWallActor* WallActor;
@@ -409,8 +402,4 @@ private:
 	//
 	void SetInstructionText(FString Text, int time = 2);
 
-
-	//
-	void BuildingMouseDragLogic(const FInputActionValue& Value);
-	//
 };
