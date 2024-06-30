@@ -244,8 +244,6 @@ void AArchVizController::RoadBuilderMouseLeftClickLocation() {
 			if (!bHasPreviousRoad) {
 
 				NewDirection = Direction;
-				//FirstClickLocation.X -= (Width * 1.3);
-				//FirstClickLocation.Y -= (Width * 1.3);
 
 				Rotation = UKismetMathLibrary::FindLookAtRotation(FirstClickLocation, SecondClickLocation);
 
@@ -268,6 +266,31 @@ void AArchVizController::RoadBuilderMouseLeftClickLocation() {
 				bHasPreviousRoad = true;
 			}
 			else {
+
+
+				//int OffsetX=0;
+				//int OffsetY=0;
+				//if (Direction.X > 0 && Direction.Y > 0) {
+				//	//++
+				//	OffsetX = (Width * 0.5f);
+				//	OffsetY = -(Width * 0.5f);
+				//}
+				//else if (Direction.X > 0 && Direction.Y < 0) {
+				//	//+-
+				//	OffsetX = -(Width * 0.5f);
+				//	OffsetY = (Width * 0.5f);
+				//}
+				//else if (Direction.X < 0 && Direction.Y > 0) {
+				//	//-+
+				//	OffsetX = -(Width * 0.5f);
+				//	OffsetY = -(Width * 0.5f);
+				//}
+				//else if (Direction.X < 0 && Direction.Y < 0) {
+				//	//--
+				//	OffsetX = (Width * 0.5f);
+				//	OffsetY = (Width * 0.5f);
+				//}
+
 				FVector RightVector = FVector::CrossProduct(PreviousRoadDirection, FVector::UpVector).GetSafeNormal();
 				FVector LeftVector = -RightVector;
 
@@ -280,10 +303,16 @@ void AArchVizController::RoadBuilderMouseLeftClickLocation() {
 				if (DotRight > DotLeft && DotRight > DotStraight) {
 					NewDirection = RightVector;
 					Rotation = PreviousRoadRotation + FRotator(0, 90, 0);
+
+					//PreviousClickLocation.X += OffsetX;
+					//PreviousClickLocation.Y += OffsetY;
+
 				}
 				else if (DotLeft > DotRight && DotLeft > DotStraight) {
 					NewDirection = LeftVector;
 					Rotation = PreviousRoadRotation + FRotator(0, -90, 0);
+					//PreviousClickLocation.X += OffsetX;
+					//PreviousClickLocation.Y += OffsetY;
 				}
 				else {
 					NewDirection = PreviousRoadDirection;
@@ -1131,7 +1160,7 @@ void AArchVizController::SelectInteriorActor()
 void AArchVizController::RotateInterior() {
 	if (IsValid(InteriorActor)) {
 		FRotator NewRotation = InteriorActor->GetActorRotation();
-		NewRotation.Yaw += 20;
+		NewRotation.Yaw += 22.5;
 		InteriorActor->SetActorRotation(NewRotation);
 	}
 }
@@ -1291,7 +1320,9 @@ void AArchVizController::ApplyRoadMaterial(const FRoadMaterial& RoadMaterial) {
 void AArchVizController::SaveArchviz()
 {
 	FString SlotName = CommonUserWidgetHandler->FileNameText->GetText().ToString();
-
+	if (SlotName == "") {
+		SlotName = "Untitled" + FString::FromInt(FMath::RandRange(1, 10000));
+	}
 	UArchVizSaveGame* SaveArchVizInstance = Cast<UArchVizSaveGame>(UGameplayStatics::CreateSaveGameObject(UArchVizSaveGame::StaticClass()));
 
 	TArray<AActor*> FoundRoadActors;

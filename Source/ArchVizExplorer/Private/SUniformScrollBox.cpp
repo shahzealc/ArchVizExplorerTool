@@ -8,18 +8,17 @@
 BEGIN_SLATE_FUNCTION_BUILD_OPTIMIZATION
 void SUniformScrollBox::Construct(const FArguments& InArgs)
 {
-	ScrollContainer = SNew(SScrollBox).Orientation(EOrientation::Orient_Horizontal);
+	ScrollContainer = SNew(SScrollBox).Orientation(EOrientation::Orient_Vertical);
 	ScrollBoxAssetManager = InArgs._ScrollBoxAssetManager;
 	AssetType = InArgs._AssetType;
 
 	TSharedPtr<SVerticalBox> MainVertical = SNew(SVerticalBox);
 	AssetTypeText = SNew(STextBlock)
 		.Justification(ETextJustify::Center)
-		//.ColorAndOpacity(FLinearColor::Green)
-		.ColorAndOpacity(FLinearColor(0.040915f, 0.201556f, 0.973446f, 1.0f))
-		.Font(FSlateFontInfo(FPaths::EngineContentDir() / TEXT("Slate/Fonts/Roboto-Bold.ttf"), 20));
+		.ColorAndOpacity(FLinearColor(1, 1, 1, 1.0f))
+		.Font(FSlateFontInfo(FPaths::EngineContentDir() / TEXT("Slate/Fonts/Roboto-Bold.ttf"), 13));
 
-	MainVertical->AddSlot().FillHeight(0.2)[AssetTypeText.ToSharedRef()];
+	MainVertical->AddSlot().FillHeight(0.1)[AssetTypeText.ToSharedRef()];
 	MainVertical->AddSlot()[ScrollContainer.ToSharedRef()];
 
 	ChildSlot[MainVertical.ToSharedRef()];
@@ -117,9 +116,7 @@ void SUniformScrollBox::ShowRoadMaterial() {
 
 			FSlateBrush* ThumbnailBrush = new FSlateBrush();
 			ThumbnailBrush->SetResourceObject(ThumbnailTexture);
-			ThumbnailBrush->ImageSize = FVector2D(120, 80);
-
-			TSharedPtr<SVerticalBox> VerticalBox = SNew(SVerticalBox);
+			ThumbnailBrush->ImageSize = FVector2D(80, 80);
 
 			FSlateColorBrush* BorderBrush = new FSlateColorBrush(FLinearColor(0.651406f, 0.651406f, 0.651406f, 1.0f));
 
@@ -129,6 +126,7 @@ void SUniformScrollBox::ShowRoadMaterial() {
 				[
 					SNew(SImage)
 						.Image(ThumbnailBrush)
+						.ToolTipText(FText::FromString(RoadMaterialData.RoadName))
 						.OnMouseButtonDown_Lambda([this, RoadMaterialData](const FGeometry& InGeometry, const FPointerEvent& MouseEvent) {
 						if (MouseEvent.GetEffectingButton() == EKeys::LeftMouseButton) {
 							CallOnClickRoadMaterial.ExecuteIfBound(RoadMaterialData);
@@ -139,26 +137,9 @@ void SUniformScrollBox::ShowRoadMaterial() {
 						.Cursor(EMouseCursor::Hand)
 				];
 
-			TSharedPtr<STextBlock> MeshText = SNew(STextBlock)
-				.Text(FText::FromString(RoadMaterialData.RoadName))
-				.Justification(ETextJustify::Center)
-				//.ColorAndOpacity(FLinearColor::Green)
-				.ColorAndOpacity(FLinearColor(0.89627f, 0.783538f, 0.40724f, 1.0f))
-				.Font(FSlateFontInfo(FPaths::EngineContentDir() / TEXT("Slate/Fonts/Roboto-Bold.ttf"), 20));
-
-			VerticalBox->AddSlot()
-				[
-					BorderAroundImage.ToSharedRef()
-				];
-
-			VerticalBox->AddSlot().FillHeight(0.2)
-				[
-					MeshText.ToSharedRef()
-				];
-
 			ScrollContainer->AddSlot()
 				[
-					VerticalBox.ToSharedRef()
+					BorderAroundImage.ToSharedRef()
 				];
 		}
 	}
@@ -170,9 +151,7 @@ void SUniformScrollBox::ShowBuildingMaterial() {
 		if (UTexture2D* ThumbnailTexture = Cast<UTexture2D>(BuildingMaterialData.BuildingMaterialImage)) {
 			FSlateBrush* ThumbnailBrush = new FSlateBrush();
 			ThumbnailBrush->SetResourceObject(ThumbnailTexture);
-			ThumbnailBrush->ImageSize = FVector2D(120, 80);
-
-			TSharedPtr<SVerticalBox> VerticalBox = SNew(SVerticalBox);
+			ThumbnailBrush->ImageSize = FVector2D(120, 120);
 
 			FSlateColorBrush* BorderBrush = new FSlateColorBrush(FLinearColor(0.651406f, 0.651406f, 0.651406f, 1.0f));
 
@@ -182,6 +161,7 @@ void SUniformScrollBox::ShowBuildingMaterial() {
 				[
 					SNew(SImage)
 						.Image(ThumbnailBrush)
+						.ToolTipText(FText::FromString(BuildingMaterialData.BuildingMaterialName))
 						.OnMouseButtonDown_Lambda([this, BuildingMaterialData](const FGeometry& InGeometry, const FPointerEvent& MouseEvent) {
 						if (MouseEvent.GetEffectingButton() == EKeys::LeftMouseButton) {
 							CallOnClickBuildingMaterial.ExecuteIfBound(BuildingMaterialData);
@@ -192,39 +172,20 @@ void SUniformScrollBox::ShowBuildingMaterial() {
 						.Cursor(EMouseCursor::Hand)
 				];
 
-			TSharedPtr<STextBlock> MeshText = SNew(STextBlock)
-				.Text(FText::FromString(BuildingMaterialData.BuildingMaterialName))
-				.Justification(ETextJustify::Center)
-				.ColorAndOpacity(FLinearColor(0.89627f, 0.783538f, 0.40724f, 1.0f))
-				.Font(FSlateFontInfo(FPaths::EngineContentDir() / TEXT("Slate/Fonts/Roboto-Bold.ttf"), 20));
-
-			VerticalBox->AddSlot()
-				[
-					BorderAroundImage.ToSharedRef()
-				];
-
-			VerticalBox->AddSlot().FillHeight(0.2)
-				[
-					MeshText.ToSharedRef()
-				];
-
 			ScrollContainer->AddSlot()
 				[
-					VerticalBox.ToSharedRef()
+					BorderAroundImage.ToSharedRef()
 				];
 		}
 	}
 }
-
 
 void SUniformScrollBox::ShowInteriorFloor() {
 	for (const FInteriorFloorData& InteriorFloorData : ScrollBoxAssetManager->InteriorFloorData) {
 		if (UTexture2D* ThumbnailTexture = Cast<UTexture2D>(InteriorFloorData.InteriorFloorImage)) {
 			FSlateBrush* ThumbnailBrush = new FSlateBrush();
 			ThumbnailBrush->SetResourceObject(ThumbnailTexture);
-			ThumbnailBrush->ImageSize = FVector2D(120, 80);
-
-			TSharedPtr<SVerticalBox> VerticalBox = SNew(SVerticalBox);
+			ThumbnailBrush->ImageSize = FVector2D(120, 120);
 
 			FSlateColorBrush* BorderBrush = new FSlateColorBrush(FLinearColor(0.651406f, 0.651406f, 0.651406f, 1.0f));
 
@@ -234,6 +195,7 @@ void SUniformScrollBox::ShowInteriorFloor() {
 				[
 					SNew(SImage)
 						.Image(ThumbnailBrush)
+						.ToolTipText(FText::FromString(InteriorFloorData.InteriorFloorName))
 						.OnMouseButtonDown_Lambda([this, InteriorFloorData](const FGeometry& InGeometry, const FPointerEvent& MouseEvent) {
 						if (MouseEvent.GetEffectingButton() == EKeys::LeftMouseButton) {
 							CallOnClickInteriorFloor.ExecuteIfBound(InteriorFloorData);
@@ -244,39 +206,20 @@ void SUniformScrollBox::ShowInteriorFloor() {
 						.Cursor(EMouseCursor::Hand)
 				];
 
-			TSharedPtr<STextBlock> MeshText = SNew(STextBlock)
-				.Text(FText::FromString(InteriorFloorData.InteriorFloorName))
-				.Justification(ETextJustify::Center)
-				.ColorAndOpacity(FLinearColor(0.89627f, 0.783538f, 0.40724f, 1.0f))
-				.Font(FSlateFontInfo(FPaths::EngineContentDir() / TEXT("Slate/Fonts/Roboto-Bold.ttf"), 20));
-
-			VerticalBox->AddSlot()
-				[
-					BorderAroundImage.ToSharedRef()
-				];
-
-			VerticalBox->AddSlot().FillHeight(0.2)
-				[
-					MeshText.ToSharedRef()
-				];
-
 			ScrollContainer->AddSlot()
 				[
-					VerticalBox.ToSharedRef()
+					BorderAroundImage.ToSharedRef()
 				];
 		}
 	}
 }
-
 
 void SUniformScrollBox::ShowInteriorRoof() {
 	for (const FInteriorRoofData& InteriorRoofData : ScrollBoxAssetManager->InteriorRoofData) {
 		if (UTexture2D* ThumbnailTexture = Cast<UTexture2D>(InteriorRoofData.InteriorRoofImage)) {
 			FSlateBrush* ThumbnailBrush = new FSlateBrush();
 			ThumbnailBrush->SetResourceObject(ThumbnailTexture);
-			ThumbnailBrush->ImageSize = FVector2D(120, 80);
-
-			TSharedPtr<SVerticalBox> VerticalBox = SNew(SVerticalBox);
+			ThumbnailBrush->ImageSize = FVector2D(120, 120);
 
 			FSlateColorBrush* BorderBrush = new FSlateColorBrush(FLinearColor(0.651406f, 0.651406f, 0.651406f, 1.0f));
 
@@ -286,6 +229,7 @@ void SUniformScrollBox::ShowInteriorRoof() {
 				[
 					SNew(SImage)
 						.Image(ThumbnailBrush)
+						.ToolTipText(FText::FromString(InteriorRoofData.InteriorRoofName))
 						.OnMouseButtonDown_Lambda([this, InteriorRoofData](const FGeometry& InGeometry, const FPointerEvent& MouseEvent) {
 						if (MouseEvent.GetEffectingButton() == EKeys::LeftMouseButton) {
 							CallOnClickInteriorRoof.ExecuteIfBound(InteriorRoofData);
@@ -296,39 +240,20 @@ void SUniformScrollBox::ShowInteriorRoof() {
 						.Cursor(EMouseCursor::Hand)
 				];
 
-			TSharedPtr<STextBlock> MeshText = SNew(STextBlock)
-				.Text(FText::FromString(InteriorRoofData.InteriorRoofName))
-				.Justification(ETextJustify::Center)
-				.ColorAndOpacity(FLinearColor(0.89627f, 0.783538f, 0.40724f, 1.0f))
-				.Font(FSlateFontInfo(FPaths::EngineContentDir() / TEXT("Slate/Fonts/Roboto-Bold.ttf"), 20));
-
-			VerticalBox->AddSlot()
-				[
-					BorderAroundImage.ToSharedRef()
-				];
-
-			VerticalBox->AddSlot().FillHeight(0.2)
-				[
-					MeshText.ToSharedRef()
-				];
-
 			ScrollContainer->AddSlot()
 				[
-					VerticalBox.ToSharedRef()
+					BorderAroundImage.ToSharedRef()
 				];
 		}
 	}
 }
-
 
 void SUniformScrollBox::ShowInteriorWall() {
 	for (const FInteriorWallData& InteriorWallData : ScrollBoxAssetManager->InteriorWallData) {
 		if (UTexture2D* ThumbnailTexture = Cast<UTexture2D>(InteriorWallData.InteriorWallImage)) {
 			FSlateBrush* ThumbnailBrush = new FSlateBrush();
 			ThumbnailBrush->SetResourceObject(ThumbnailTexture);
-			ThumbnailBrush->ImageSize = FVector2D(120, 80);
-
-			TSharedPtr<SVerticalBox> VerticalBox = SNew(SVerticalBox);
+			ThumbnailBrush->ImageSize = FVector2D(120, 120);
 
 			FSlateColorBrush* BorderBrush = new FSlateColorBrush(FLinearColor(0.651406f, 0.651406f, 0.651406f, 1.0f));
 
@@ -338,6 +263,7 @@ void SUniformScrollBox::ShowInteriorWall() {
 				[
 					SNew(SImage)
 						.Image(ThumbnailBrush)
+						.ToolTipText(FText::FromString(InteriorWallData.InteriorWallName))
 						.OnMouseButtonDown_Lambda([this, InteriorWallData](const FGeometry& InGeometry, const FPointerEvent& MouseEvent) {
 						if (MouseEvent.GetEffectingButton() == EKeys::LeftMouseButton) {
 							CallOnClickInteriorWall.ExecuteIfBound(InteriorWallData);
@@ -354,24 +280,13 @@ void SUniformScrollBox::ShowInteriorWall() {
 				.ColorAndOpacity(FLinearColor(0.89627f, 0.783538f, 0.40724f, 1.0f))
 				.Font(FSlateFontInfo(FPaths::EngineContentDir() / TEXT("Slate/Fonts/Roboto-Bold.ttf"), 20));
 
-			VerticalBox->AddSlot()
-				[
-					BorderAroundImage.ToSharedRef()
-				];
-
-			VerticalBox->AddSlot().FillHeight(0.2)
-				[
-					MeshText.ToSharedRef()
-				];
-
 			ScrollContainer->AddSlot()
 				[
-					VerticalBox.ToSharedRef()
+					BorderAroundImage.ToSharedRef()
 				];
 		}
 	}
 }
-
 
 void SUniformScrollBox::ShowInteriorMaterial() {
 	for (const FInteriorMaterial& InteriorMaterialData : ScrollBoxAssetManager->InteriorMaterial) {
@@ -379,8 +294,6 @@ void SUniformScrollBox::ShowInteriorMaterial() {
 			FSlateBrush* ThumbnailBrush = new FSlateBrush();
 			ThumbnailBrush->SetResourceObject(ThumbnailTexture);
 			ThumbnailBrush->ImageSize = FVector2D(120, 80);
-
-			TSharedPtr<SVerticalBox> VerticalBox = SNew(SVerticalBox);
 
 			FSlateColorBrush* BorderBrush = new FSlateColorBrush(FLinearColor(0.651406f, 0.651406f, 0.651406f, 1.0f));
 
@@ -406,36 +319,20 @@ void SUniformScrollBox::ShowInteriorMaterial() {
 				.ColorAndOpacity(FLinearColor(0.89627f, 0.783538f, 0.40724f, 1.0f))
 				.Font(FSlateFontInfo(FPaths::EngineContentDir() / TEXT("Slate/Fonts/Roboto-Bold.ttf"), 20));
 
-			VerticalBox->AddSlot()
-				[
-					BorderAroundImage.ToSharedRef()
-				];
-
-			VerticalBox->AddSlot().FillHeight(0.2)
-				[
-					MeshText.ToSharedRef()
-				];
-
 			ScrollContainer->AddSlot()
 				[
-					VerticalBox.ToSharedRef()
+					BorderAroundImage.ToSharedRef()
 				];
 		}
 	}
 }
 
-
 void SUniformScrollBox::ShowDoor() {
-
 	for (const FDoorData& DoorData : ScrollBoxAssetManager->DoorData) {
-
 		if (UTexture2D* ThumbnailTexture = Cast<UTexture2D>(DoorData.DoorImage)) {
-
 			FSlateBrush* ThumbnailBrush = new FSlateBrush();
 			ThumbnailBrush->SetResourceObject(ThumbnailTexture);
-			ThumbnailBrush->ImageSize = FVector2D(120, 80);
-
-			TSharedPtr<SVerticalBox> VerticalBox = SNew(SVerticalBox);
+			ThumbnailBrush->ImageSize = FVector2D(80, 120);
 
 			FSlateColorBrush* BorderBrush = new FSlateColorBrush(FLinearColor(0.651406f, 0.651406f, 0.651406f, 1.0f));
 
@@ -445,6 +342,7 @@ void SUniformScrollBox::ShowDoor() {
 				[
 					SNew(SImage)
 						.Image(ThumbnailBrush)
+						.ToolTipText(FText::FromString(DoorData.DoorName))
 						.OnMouseButtonDown_Lambda([this, DoorData](const FGeometry& InGeometry, const FPointerEvent& MouseEvent) {
 						if (MouseEvent.GetEffectingButton() == EKeys::LeftMouseButton) {
 							CallOnClickDoor.ExecuteIfBound(DoorData);
@@ -455,39 +353,20 @@ void SUniformScrollBox::ShowDoor() {
 						.Cursor(EMouseCursor::Hand)
 				];
 
-			TSharedPtr<STextBlock> MeshText = SNew(STextBlock)
-				.Text(FText::FromString(DoorData.DoorName))
-				.Justification(ETextJustify::Center)
-				.ColorAndOpacity(FLinearColor(0.89627f, 0.783538f, 0.40724f, 1.0f))
-				.Font(FSlateFontInfo(FPaths::EngineContentDir() / TEXT("Slate/Fonts/Roboto-Bold.ttf"), 20));
-
-			VerticalBox->AddSlot()
-				[
-					BorderAroundImage.ToSharedRef()
-				];
-
-			VerticalBox->AddSlot().FillHeight(0.2)
-				[
-					MeshText.ToSharedRef()
-				];
-
 			ScrollContainer->AddSlot()
 				[
-					VerticalBox.ToSharedRef()
+					BorderAroundImage.ToSharedRef()
 				];
 		}
 	}
 }
-
 
 void SUniformScrollBox::ShowWindow() {
 	for (const FWindowData& WindowData : ScrollBoxAssetManager->WindowData) {
 		if (UTexture2D* ThumbnailTexture = Cast<UTexture2D>(WindowData.WindowImage)) {
 			FSlateBrush* ThumbnailBrush = new FSlateBrush();
 			ThumbnailBrush->SetResourceObject(ThumbnailTexture);
-			ThumbnailBrush->ImageSize = FVector2D(120, 80);
-
-			TSharedPtr<SVerticalBox> VerticalBox = SNew(SVerticalBox);
+			ThumbnailBrush->ImageSize = FVector2D(80, 120);
 
 			FSlateColorBrush* BorderBrush = new FSlateColorBrush(FLinearColor(0.651406f, 0.651406f, 0.651406f, 1.0f));
 
@@ -497,6 +376,7 @@ void SUniformScrollBox::ShowWindow() {
 				[
 					SNew(SImage)
 						.Image(ThumbnailBrush)
+						.ToolTipText(FText::FromString(WindowData.WindowName))
 						.OnMouseButtonDown_Lambda([this, WindowData](const FGeometry& InGeometry, const FPointerEvent& MouseEvent) {
 						if (MouseEvent.GetEffectingButton() == EKeys::LeftMouseButton) {
 							CallOnClickWindow.ExecuteIfBound(WindowData);
@@ -507,31 +387,12 @@ void SUniformScrollBox::ShowWindow() {
 						.Cursor(EMouseCursor::Hand)
 				];
 
-			TSharedPtr<STextBlock> MeshText = SNew(STextBlock)
-				.Text(FText::FromString(WindowData.WindowName))
-				.Justification(ETextJustify::Center)
-				.ColorAndOpacity(FLinearColor(0.89627f, 0.783538f, 0.40724f, 1.0f))
-				.Font(FSlateFontInfo(FPaths::EngineContentDir() / TEXT("Slate/Fonts/Roboto-Bold.ttf"), 20));
-
-			VerticalBox->AddSlot()
-				[
-					BorderAroundImage.ToSharedRef()
-				];
-
-			VerticalBox->AddSlot().FillHeight(0.2)
-				[
-					MeshText.ToSharedRef()
-				];
-
 			ScrollContainer->AddSlot()
 				[
-					VerticalBox.ToSharedRef()
+					BorderAroundImage.ToSharedRef()
 				];
 		}
 	}
 }
-
-
-
 
 END_SLATE_FUNCTION_BUILD_OPTIMIZATION
