@@ -63,7 +63,11 @@ Build/*/**
 # Built data for maps
 *_BuiltData.uasset
 
+# Ignore everything in the Saved folder
 Saved/*
+
+# Do not ignore the SavedGame folder and its contents
+!Saved/SavedGame/
 
 # Compiled source files for the engine to use
 Intermediate/*
