@@ -16,6 +16,11 @@ AWallActor::AWallActor()
 	{
 		WallMesh = WallMeshFinder.Object;
 	}
+	static ConstructorHelpers::FObjectFinder<UStaticMesh> FillerMeshFinder(TEXT("/Script/Engine.StaticMesh'/Game/ArchVizExplorerContent/StaticMeshes/Filler.Filler'"));
+	if (FillerMeshFinder.Succeeded())
+	{
+		FillerMesh = FillerMeshFinder.Object;
+	}
 
 }
 
@@ -49,7 +54,18 @@ void AWallActor::GenerateSegmentedWalls(int Segments) {
 		LowerWallArray.Add(LowerWall);
 		UpperWallArray.Add(UpperWall);
 
+
 	}
+
+	UStaticMeshComponent* FillerWall = NewObject<UStaticMeshComponent>(this);
+	FillerWall->AttachToComponent(RootScene, FAttachmentTransformRules::KeepRelativeTransform);
+
+	FillerWall->SetRelativeLocation(FVector(NumberofSegments*114, 0, 0));
+	FillerWall->RegisterComponentWithWorld(GetWorld());
+	FillerWall->SetStaticMesh(FillerMesh);
+	FillerWall->SetRelativeScale3D(FVector(1.25, 1.25, 1));
+
+
 }
 
 void AWallActor::DestroyComponentByTransform(const FTransform& Transform)

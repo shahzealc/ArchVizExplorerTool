@@ -200,6 +200,22 @@ public:
 	UPROPERTY()
 	class UInputAction* BuildingDeleteWall;
 
+	/// <summary>
+	/// /////
+	/// </summary>
+	UPROPERTY()
+	class UInputAction* BuildingMouseDrag;
+
+	UFUNCTION()
+	void BuildingMouseDragLogic(const FInputActionValue& Value);
+
+	FVector WallStartLocation;
+	bool bMoveonTickWall=false;
+
+	void ConnectToNearbyWalls();
+	/// <summary>
+	/// /////
+	/// </summary>
 
 	UPROPERTY()
 	AWallActor* WallActor;

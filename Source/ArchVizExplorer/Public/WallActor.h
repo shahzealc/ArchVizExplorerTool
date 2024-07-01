@@ -33,7 +33,10 @@ public:
 	TArray<UStaticMeshComponent*> UpperWallArray;
 
 	UPROPERTY()
-	UStaticMesh* WallMesh;
+	UStaticMesh* WallMesh;	
+	
+	UPROPERTY()
+	UStaticMesh* FillerMesh;
 
 	UPROPERTY()
 	int NumberofSegments;

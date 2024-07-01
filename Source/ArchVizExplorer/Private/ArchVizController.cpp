@@ -166,6 +166,8 @@ void AArchVizController::CleanUp() {
 
 	CommonUserWidgetHandler->GuideButton->SetVisibility(ESlateVisibility::Visible);
 
+	bMoveonTickWall = false;
+
 }
 
 //Road Construction
@@ -269,30 +271,6 @@ void AArchVizController::RoadBuilderMouseLeftClickLocation() {
 			}
 			else {
 
-
-				//int OffsetX=0;
-				//int OffsetY=0;
-				//if (Direction.X > 0 && Direction.Y > 0) {
-				//	//++
-				//	OffsetX = (Width * 0.5f);
-				//	OffsetY = -(Width * 0.5f);
-				//}
-				//else if (Direction.X > 0 && Direction.Y < 0) {
-				//	//+-
-				//	OffsetX = -(Width * 0.5f);
-				//	OffsetY = (Width * 0.5f);
-				//}
-				//else if (Direction.X < 0 && Direction.Y > 0) {
-				//	//-+
-				//	OffsetX = -(Width * 0.5f);
-				//	OffsetY = -(Width * 0.5f);
-				//}
-				//else if (Direction.X < 0 && Direction.Y < 0) {
-				//	//--
-				//	OffsetX = (Width * 0.5f);
-				//	OffsetY = (Width * 0.5f);
-				//}
-
 				FVector RightVector = FVector::CrossProduct(PreviousRoadDirection, FVector::UpVector).GetSafeNormal();
 				FVector LeftVector = -RightVector;
 
@@ -306,15 +284,15 @@ void AArchVizController::RoadBuilderMouseLeftClickLocation() {
 					NewDirection = RightVector;
 					Rotation = PreviousRoadRotation + FRotator(0, 90, 0);
 
-					//PreviousClickLocation.X += OffsetX;
-					//PreviousClickLocation.Y += OffsetY;
+					PreviousClickLocation -= (RightVector.GetSafeNormal() * (Width / 2));
 
 				}
 				else if (DotLeft > DotRight && DotLeft > DotStraight) {
 					NewDirection = LeftVector;
 					Rotation = PreviousRoadRotation + FRotator(0, -90, 0);
-					//PreviousClickLocation.X += OffsetX;
-					//PreviousClickLocation.Y += OffsetY;
+
+					PreviousClickLocation -= (LeftVector.GetSafeNormal() * (Width / 2));
+
 				}
 				else {
 					NewDirection = PreviousRoadDirection;
@@ -436,6 +414,12 @@ void AArchVizController::SetUpBuildingInputComponent() {
 	BuildingMappingContext->MapKey(BuildingRotateWall, EKeys::R);
 	BuildingMappingContext->MapKey(BuildingDeleteWall, EKeys::Delete);
 
+	//
+	BuildingMouseDrag = NewObject<UInputAction>(this);
+	BuildingMouseDrag->ValueType = EInputActionValueType::Axis2D;
+	BuildingMappingContext->MapKey(BuildingMouseDrag, EKeys::Mouse2D);
+	//
+
 	UEnhancedInputComponent* EIC = Cast<UEnhancedInputComponent>(InputComponent);
 
 	SetShowMouseCursor(true);
@@ -448,6 +432,9 @@ void AArchVizController::SetUpBuildingInputComponent() {
 	EIC->BindAction(BuildingRotateWall, ETriggerEvent::Completed, this, &AArchVizController::RotateWall);
 	EIC->BindAction(BuildingDeleteWall, ETriggerEvent::Completed, this, &AArchVizController::DestroyWall);
 
+	//
+	EIC->BindAction(BuildingMouseDrag, ETriggerEvent::Triggered, this, &AArchVizController::BuildingMouseDragLogic);
+	//
 
 	ULocalPlayer* LocalPlayer = GetLocalPlayer();
 	check(LocalPlayer);
@@ -479,6 +466,7 @@ void AArchVizController::ChangeBuildingMode(FString Mode) {
 	BuildingUserWidgetHandler->DoorTypes->SetVisibility(ESlateVisibility::Hidden);
 	BuildingUserWidgetHandler->WindowTypes->SetVisibility(ESlateVisibility::Hidden);
 	BuildingUserWidgetHandler->SegmentUniformPanel->SetVisibility(ESlateVisibility::Hidden);
+	bMoveonTickWall = false;
 
 	if (IsValid(SelectedWallMesh))
 		SelectedWallMesh->SetRenderCustomDepth(false);
@@ -510,15 +498,22 @@ void AArchVizController::ChangeBuildingMode(FString Mode) {
 
 void AArchVizController::BuildingLeftMouseLogic() {
 
-
-
 	DisableRendering(SelectedWallStaticMesh);
+	if (IsValid(SelectedRoofActor))
+	{
+		SelectedRoofActor->ProceduralMesh->SetRenderCustomDepth(false);
+		SelectedRoofActor = nullptr;
+	}
+	if (IsValid(SelectedFloorActor)) {
+		SelectedFloorActor->ProceduralMesh->SetRenderCustomDepth(false);
+		SelectedFloorActor = nullptr;
+	}
 	bMoveWall = false;
 
 	if (IsValid(SelectedWindowMesh))
 		SelectedWindowMesh->SetRenderCustomDepth(false);
 
-	if (BuildingMode == EBuildingMode::Wall)
+	if (BuildingMode == EBuildingMode::Wall) // bmovewall extra //////////
 		PlaceWall();
 	else if (BuildingMode == EBuildingMode::Roof)
 		StoreRoofPoints();
@@ -530,6 +525,54 @@ void AArchVizController::BuildingLeftMouseLogic() {
 		SelectWallSegment();
 
 }
+
+/// <summary>
+/// /////
+/// 
+/// 
+/// </summary>
+void AArchVizController::BuildingMouseDragLogic(const FInputActionValue& Value) {
+
+
+	if (BuildingMode == EBuildingMode::Wall && bMoveWall) {
+		FVector2D DragDelta = Value.Get<FVector2D>();
+
+		FVector CursorWorldLocation;
+		FVector CursorWorldDirection;
+		DeprojectMousePositionToWorld(CursorWorldLocation, CursorWorldDirection);
+
+		FHitResult HitResult;
+		FCollisionQueryParams TraceParams(FName(TEXT("LineTrace")), true, WallActor);
+
+		if (GetWorld()->LineTraceSingleByChannel(HitResult, CursorWorldLocation, CursorWorldLocation + CursorWorldDirection * 10000, ECC_Visibility, TraceParams)) {
+			FVector NewLocation = HitResult.Location;
+			NewLocation.Z = BuildingUserWidgetHandler->CurrentStorey * 312;
+
+			float WallLength = FVector::Dist(WallStartLocation, NewLocation);
+
+			int32 NewSegments = FMath::Max(1, FMath::FloorToInt(WallLength / 114.0f));
+
+			if (NewSegments != WallActor->GetNumSegments()) {
+				ChangeSegment(NewSegments);
+			}
+
+			FVector WallDirection = (NewLocation - WallStartLocation).GetSafeNormal();
+			FRotator NewRotation = WallDirection.Rotation();
+
+			NewRotation.Yaw = FMath::RoundToFloat(NewRotation.Yaw / 90.0f) * 90.0f;
+
+			NewRotation.Yaw = FMath::Fmod(NewRotation.Yaw + 360.0f, 360.0f);
+
+			WallActor->SetActorLocationAndRotation(WallStartLocation, NewRotation);
+
+			//SnapWall();
+		}
+	}
+}
+/// <summary>
+/// ////
+/// </summary>
+
 
 void AArchVizController::BuildingMiddleMouseLogic() {
 	if (BuildingMode == EBuildingMode::Wall)
@@ -546,6 +589,7 @@ void AArchVizController::BuildingMiddleMouseLogic() {
 
 void AArchVizController::SelectWallActor()
 {
+
 	if (!bMoveWall) {
 		FHitResult HitResult;
 		FCollisionQueryParams TraceParams(FName(TEXT("LineTrace")), true);
@@ -568,6 +612,7 @@ void AArchVizController::SelectWallActor()
 				Component->SetRenderCustomDepth(true);
 				Component->SetCustomDepthStencilValue(2);
 			}
+			bMoveonTickWall = true;
 
 		}
 		else {
@@ -632,8 +677,10 @@ void AArchVizController::SelectRoofActor()
 }
 
 void AArchVizController::PlaceWall() {
-	if (bMoveWall)
-		bMoveWall = false;
+	bMoveonTickWall = false;
+	bMoveWall = false;
+
+	ConnectToNearbyWalls();
 }
 
 void AArchVizController::DisableRendering(TArray<UStaticMeshComponent*> SelectedMesh)
@@ -650,7 +697,7 @@ void AArchVizController::Tick(float DeltaSeconds)
 	Super::Tick(DeltaSeconds);
 
 	if (ConstructionMode == EConstructionMode::Building) {
-		if (IsValid(WallActor) && bMoveWall) {
+		if (IsValid(WallActor) && bMoveWall && bMoveonTickWall) {
 			FHitResult HitResult;
 			FCollisionQueryParams TraceParams(FName(TEXT("LineTrace")), true, WallActor);
 
@@ -663,7 +710,7 @@ void AArchVizController::Tick(float DeltaSeconds)
 				NewLocation.Z = 0;
 				NewLocation.Z = BuildingUserWidgetHandler->CurrentStorey * 312;
 				WallActor->SetActorRelativeLocation(NewLocation);
-				SnapWall();
+				//SnapWall();
 			}
 		}
 	}
@@ -755,9 +802,50 @@ void AArchVizController::SelectWindow() {
 
 }
 
+/// <summary>
+/// //
+/// </summary>
 void AArchVizController::BuildingRightMouseLogic() {
+	/*if (BuildingMode == EBuildingMode::Wall) {
+		FVector CursorWorldLocation;
+		FVector CursorWorldDirection;
+		DeprojectMousePositionToWorld(CursorWorldLocation, CursorWorldDirection);
+
+		FHitResult HitResult;
+		FCollisionQueryParams TraceParams(FName(TEXT("LineTrace")), true);
+
+		if (GetWorld()->LineTraceSingleByChannel(HitResult, CursorWorldLocation, CursorWorldLocation + CursorWorldDirection * 10000, ECC_Visibility, TraceParams)) {
+			FVector SpawnLocation_ = HitResult.Location;
+			SpawnLocation_.Z = BuildingUserWidgetHandler->CurrentStorey * 312;
+
+			WallActor = GetWorld()->SpawnActor<AWallActor>(AWallActor::StaticClass(), SpawnLocation_, FRotator::ZeroRotator);
+			bMoveWall = true;
+			WallStartLocation = SpawnLocation_;
+		}
+	}*/
+
 	if (BuildingMode == EBuildingMode::Wall) {
-		NewWall();
+		if (!bMoveWall) {
+			FVector CursorWorldLocation;
+			FVector CursorWorldDirection;
+			DeprojectMousePositionToWorld(CursorWorldLocation, CursorWorldDirection);
+
+			FHitResult HitResult;
+			FCollisionQueryParams TraceParams(FName(TEXT("LineTrace")), true);
+
+			if (GetWorld()->LineTraceSingleByChannel(HitResult, CursorWorldLocation, CursorWorldLocation + CursorWorldDirection * 10000, ECC_Visibility, TraceParams)) {
+				FVector SpawnLocation_ = HitResult.Location;
+				SpawnLocation_.Z = BuildingUserWidgetHandler->CurrentStorey * 312;
+
+				SpawnLocation_.X = FMath::RoundToFloat(SpawnLocation_.X / WallSnapValue) * WallSnapValue;
+
+				SpawnLocation_.Y = FMath::RoundToFloat(SpawnLocation_.Y / WallSnapValue) * WallSnapValue;
+
+				WallActor = GetWorld()->SpawnActor<AWallActor>(AWallActor::StaticClass(), SpawnLocation_, FRotator::ZeroRotator);
+				bMoveWall = true;
+				WallStartLocation = SpawnLocation_;
+			}
+		}
 	}
 }
 
@@ -767,6 +855,10 @@ void AArchVizController::NewWall() {
 	WallActor = GetWorld()->SpawnActor<AWallActor>(AWallActor::StaticClass(), FVector::ZeroVector, FRotator::ZeroRotator);
 	WallActor->GenerateSegmentedWalls(BuildingUserWidgetHandler->WallSegment->GetValue());
 }
+/// <summary>
+/// //
+/// </summary>
+
 
 void AArchVizController::RotateWall() {
 	if (IsValid(WallActor)) {
@@ -856,10 +948,9 @@ void AArchVizController::StoreRoofOrFloorPoints(TArray<FVector>& Locations, bool
 				FVector WallTopRight = HitComponent->GetSocketLocation("WallTopRightSocket");
 				FVector HitLocation = HitResult.Location;
 				FVector ClosestPoint = (FVector::Dist(WallTopLeft, HitLocation) < FVector::Dist(WallTopRight, HitLocation)) ? WallTopLeft : WallTopRight;
-				GEngine->AddOnScreenDebugMessage(-1, 2, FColor::Black, FString::FromInt(ClosestPoint.Z));
 
-				if (!bIsRoof) ClosestPoint.Z = BuildingUserWidgetHandler->CurrentStorey * 310;
-				//if (!bIsRoof) ClosestPoint.Z = 1;
+				if (!bIsRoof)
+					ClosestPoint.Z = BuildingUserWidgetHandler->CurrentStorey * 310;
 				else
 				{
 					ClosestPoint.Z -= 5;
@@ -894,8 +985,14 @@ void AArchVizController::StoreRoofOrFloorPoints(TArray<FVector>& Locations, bool
 	if (Locations.Num() > 1) {
 		DrawTemporaryLine(Locations[Locations.Num() - 2], Locations[Locations.Num() - 1], bIsRoof);
 	}
-	FString text = "Point " + FString::FromInt(Locations.Num()) + " Stored";
-	SetInstructionText(text, 1);
+
+	if (Locations.Num() == 0)
+		SetInstructionText("Not a Wall", 1);
+	else {
+		FString text = "Point " + FString::FromInt(Locations.Num()) + " Stored";
+		SetInstructionText(text, 1);
+	}
+
 	if (Locations.Num() == 4) {
 		BuildingUserWidgetHandler->RoofFloorButton->SetVisibility(ESlateVisibility::Visible);
 		DrawTemporaryLine(Locations[Locations.Num() - 1], Locations[0], bIsRoof);
@@ -972,6 +1069,7 @@ void AArchVizController::DestroyWall()
 			SetInstructionText("Floor Destroyed.");
 		}
 	}
+	bMoveonTickWall = false;
 
 }
 
@@ -994,6 +1092,59 @@ void AArchVizController::IncrementStoreyCheck()
 	}
 	SetInstructionText("First Add Roof For Current Storey !!");
 
+}
+
+void AArchVizController::ConnectToNearbyWalls() {
+	if (!IsValid(WallActor)) return;
+
+	TArray<AActor*> NearbyWalls;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), AWallActor::StaticClass(), NearbyWalls);
+
+	float SnapDistance = 100.0f; // Adjust as needed
+	FVector CurrentLocation = WallActor->GetActorLocation();
+	FVector CurrentEnd = CurrentLocation + WallActor->GetActorForwardVector() * WallActor->NumberofSegments * 114;
+
+	for (AActor* NearbyActor : NearbyWalls) {
+		AWallActor* NearbyWall = Cast<AWallActor>(NearbyActor);
+		if (NearbyWall && NearbyWall != WallActor) {
+			FVector NearbyStart = NearbyWall->GetActorLocation();
+			FVector NearbyEnd = NearbyStart + NearbyWall->GetActorForwardVector() * NearbyWall->NumberofSegments * 114;
+
+			if (FVector::Dist(CurrentLocation, NearbyStart) < SnapDistance) {
+
+				GEngine->AddOnScreenDebugMessage(-1, 2, FColor::Black, "1");
+
+				WallActor->SetActorLocation(NearbyStart);
+				return;
+			}
+			if (FVector::Dist(CurrentLocation, NearbyEnd) < SnapDistance) {
+
+				GEngine->AddOnScreenDebugMessage(-1, 2, FColor::Black, "2");
+
+				NearbyEnd.X = FMath::RoundToFloat(NearbyEnd.X / WallSnapValue) * WallSnapValue;
+
+				NearbyEnd.Y = FMath::RoundToFloat(NearbyEnd.Y / WallSnapValue) * WallSnapValue;
+
+				WallActor->SetActorLocation(NearbyEnd);
+				return;
+			}
+
+			if (FVector::Dist(CurrentEnd, NearbyStart) < SnapDistance) {
+				FVector NewLocation = NearbyStart - WallActor->GetActorForwardVector() * WallActor->NumberofSegments * 114;
+				GEngine->AddOnScreenDebugMessage(-1, 2, FColor::Black, "3");
+
+				WallActor->SetActorLocation(NewLocation);
+				return;
+			}
+			if (FVector::Dist(CurrentEnd, NearbyEnd) < SnapDistance) {
+				FVector NewLocation = NearbyEnd - WallActor->GetActorForwardVector() * WallActor->NumberofSegments * 114;
+				GEngine->AddOnScreenDebugMessage(-1, 2, FColor::Black, "4");
+
+				WallActor->SetActorLocation(NewLocation);
+				return;
+			}
+		}
+	}
 }
 
 //Interior Design 
@@ -1429,7 +1580,18 @@ void AArchVizController::SaveArchviz()
 
 		FSlotNames SlotNameStruct;
 		SlotNameStruct.SlotName = SlotName;
-		SaveSlotNameInstance->SlotNames.Add(SlotNameStruct);
+
+		bool bAlreadyThere = false;
+
+		for (int i = 0; i < SaveSlotNameInstance->SlotNames.Num(); ++i) {
+			if (SaveSlotNameInstance->SlotNames[i].SlotName.Equals(SlotName)) {
+				bAlreadyThere = true;
+				break;
+			}
+		}
+
+		if (!bAlreadyThere)
+			SaveSlotNameInstance->SlotNames.Add(SlotNameStruct);
 
 		if (UGameplayStatics::SaveGameToSlot(SaveSlotNameInstance, "SavedSlotNames", 0))
 		{
@@ -1499,6 +1661,8 @@ void AArchVizController::LoadArchviz(FString SlotNameToLoad)
 		}
 	}
 	CommonUserWidgetHandler->ComboBoxLoadSlotNames->SetVisibility(ESlateVisibility::Hidden);
+
+	CommonUserWidgetHandler->FileNameText->SetText(FText::FromString(SlotNameToLoad));
 
 }
 
