@@ -117,7 +117,12 @@ void AWallActor::GenerateWindow(FTransform WindowTransform, UStaticMesh* WindowM
 		Window->SetWorldTransform(WindowTransform);
 		Window->SetStaticMesh(WindowMesh);
 		Window->RegisterComponentWithWorld(GetWorld());
-		Window->SetMaterial(1, Material);
+
+		if (Window->GetNumMaterials() == 3)
+			Window->SetMaterial(1, Material);
+		if (Window->GetNumMaterials() == 2)
+			Window->SetMaterial(0, Material);
+
 	}
 	else
 	{
@@ -151,10 +156,13 @@ void AWallActor::ApplyMaterial(UMaterialInstance* WallMaterial_)
 		if (!Component->GetName().Contains("Door")) {
 			Component->SetMaterial(0, WallMaterial_);
 		}
-		if (Component->GetName().Contains("Window1"))
+		if (Component->GetName().Contains("Window"))
 		{
-			Component->SetMaterial(1, WallMaterial_);
-			GEngine->AddOnScreenDebugMessage(-1,2,FColor::Black,"Window1");
+
+			if (Component->GetNumMaterials() == 3)
+				Component->SetMaterial(1, WallMaterial_);
+			if (Component->GetNumMaterials() == 2)
+				Component->SetMaterial(0, WallMaterial_);
 		}
 
 	}

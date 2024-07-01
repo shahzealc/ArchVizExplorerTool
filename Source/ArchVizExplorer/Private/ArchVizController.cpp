@@ -161,6 +161,8 @@ void AArchVizController::CleanUp() {
 		SelectedRoofActor->ProceduralMesh->SetRenderCustomDepth(false);
 	if (IsValid(SelectedFloorActor))
 		SelectedFloorActor->ProceduralMesh->SetRenderCustomDepth(false);
+	if (IsValid(SelectedWindowMesh))
+		SelectedWindowMesh->SetRenderCustomDepth(false);
 
 	CommonUserWidgetHandler->GuideButton->SetVisibility(ESlateVisibility::Visible);
 
@@ -462,6 +464,10 @@ void AArchVizController::ChangeBuildingMode(FString Mode) {
 
 	DisableRendering(SelectedWallStaticMesh);
 	DisableRendering(SelectedInteriorStaticMesh);
+
+	if (IsValid(SelectedWindowMesh))
+		SelectedWindowMesh->SetRenderCustomDepth(false);
+
 	DestroyOverView();
 	if (IsValid(SelectedRoofActor))
 		SelectedRoofActor->ProceduralMesh->SetRenderCustomDepth(false);
@@ -508,6 +514,9 @@ void AArchVizController::BuildingLeftMouseLogic() {
 
 	DisableRendering(SelectedWallStaticMesh);
 	bMoveWall = false;
+
+	if (IsValid(SelectedWindowMesh))
+		SelectedWindowMesh->SetRenderCustomDepth(false);
 
 	if (BuildingMode == EBuildingMode::Wall)
 		PlaceWall();
@@ -730,9 +739,7 @@ void AArchVizController::SelectDoor() {
 void AArchVizController::SelectWindow() {
 	FHitResult HitResult;
 	GetHitResultUnderCursor(ECC_Visibility, true, HitResult);
-	if (SelectedWindowMesh) {
-		SelectedWindowMesh->SetRenderCustomDepth(false);
-	}
+
 	if (AWallActor* HitWallActor = Cast<AWallActor>(HitResult.GetActor())) {
 		if (UStaticMeshComponent* HitComponent = Cast<UStaticMeshComponent>(HitResult.GetComponent())) {
 
@@ -827,8 +834,10 @@ void AArchVizController::PlaceWindow(const FWindowData& WindowData_) {
 	if (SelectedWindowMesh) {
 		FTransform Transform = SelectedWindowMesh->GetComponentTransform();
 
-		WallActor->GenerateWindow(Transform, WindowData_.WindowMesh, SelectedWindowMesh->GetMaterial(0));
-
+		if (SelectedWindowMesh->GetNumMaterials() == 3)
+			WallActor->GenerateWindow(Transform, WindowData_.WindowMesh, SelectedWindowMesh->GetMaterial(1));
+		if (SelectedWindowMesh->GetNumMaterials() == 2)
+			WallActor->GenerateWindow(Transform, WindowData_.WindowMesh, SelectedWindowMesh->GetMaterial(0));
 		BuildingUserWidgetHandler->WindowTypes->SetVisibility(ESlateVisibility::Hidden);
 
 		SelectedWindowMesh = nullptr;
@@ -1497,6 +1506,7 @@ void AArchVizController::LoadArchvizSlotNames() {
 	CommonUserWidgetHandler->ComboBoxLoadSlotNames->SetVisibility(ESlateVisibility::Visible);
 }
 //
+
 void AArchVizController::HideInstructionText() {
 	CommonUserWidgetHandler->InstructionSwitcher->SetVisibility(ESlateVisibility::Hidden);
 	CommonUserWidgetHandler->InstructionText->SetVisibility(ESlateVisibility::Hidden);
