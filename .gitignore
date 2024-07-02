@@ -64,10 +64,14 @@ Build/*/**
 *_BuiltData.uasset
 
 # Ignore everything in the Saved folder
-Saved/*
-
-# Do not ignore the SavedGame folder and its contents
-!Saved/SavedGame/
+Saved/Autosaves/
+Saved/Collections/
+Saved/Config/
+Saved/Crashes/
+Saved/Logs/
+Saved/SourceControl/
+Saved/webcache_4430/
+Saved/WorldPartition
 
 # Compiled source files for the engine to use
 Intermediate/*

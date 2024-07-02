@@ -465,7 +465,6 @@ void AArchVizController::ChangeBuildingMode(FString Mode) {
 	FloorLocations.Empty();
 	BuildingUserWidgetHandler->DoorTypes->SetVisibility(ESlateVisibility::Hidden);
 	BuildingUserWidgetHandler->WindowTypes->SetVisibility(ESlateVisibility::Hidden);
-	BuildingUserWidgetHandler->SegmentUniformPanel->SetVisibility(ESlateVisibility::Hidden);
 	bMoveonTickWall = false;
 
 	if (IsValid(SelectedWallMesh))
@@ -473,7 +472,6 @@ void AArchVizController::ChangeBuildingMode(FString Mode) {
 
 	if (Mode == "Wall") {
 		BuildingMode = EBuildingMode::Wall;
-		BuildingUserWidgetHandler->SegmentUniformPanel->SetVisibility(ESlateVisibility::Visible);
 	}
 	else if (Mode == "Roof") {
 		BuildingMode = EBuildingMode::Roof;
