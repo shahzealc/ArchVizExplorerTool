@@ -1676,7 +1676,7 @@ void AArchVizController::ShowModeSpecificInstruction() {
 		CommonUserWidgetHandler->InstructionSwitcher->SetActiveWidgetIndex(7);
 	}
 	CommonUserWidgetHandler->InstructionSwitcher->SetVisibility(ESlateVisibility::Visible);
-	GetWorld()->GetTimerManager().SetTimer(Timehandle, this, &AArchVizController::HideInstructionText, 3, false);
+	GetWorld()->GetTimerManager().SetTimer(Timehandle, this, &AArchVizController::HideInstructionText, 5, false);
 
 }
 
