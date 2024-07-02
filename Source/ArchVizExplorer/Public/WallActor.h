@@ -36,7 +36,7 @@ public:
 	UStaticMesh* WallMesh;	
 	
 	UPROPERTY()
-	UStaticMesh* FillerMesh;
+	UStaticMesh* PillarMesh;
 
 	UPROPERTY()
 	int NumberofSegments;

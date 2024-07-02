@@ -526,11 +526,7 @@ void AArchVizController::BuildingLeftMouseLogic() {
 
 }
 
-/// <summary>
-/// /////
-/// 
-/// 
-/// </summary>
+///
 void AArchVizController::BuildingMouseDragLogic(const FInputActionValue& Value) {
 
 
@@ -565,13 +561,10 @@ void AArchVizController::BuildingMouseDragLogic(const FInputActionValue& Value) 
 
 			WallActor->SetActorLocationAndRotation(WallStartLocation, NewRotation);
 
-			//SnapWall();
 		}
 	}
 }
-/// <summary>
-/// ////
-/// </summary>
+/// 
 
 
 void AArchVizController::BuildingMiddleMouseLogic() {
@@ -710,7 +703,6 @@ void AArchVizController::Tick(float DeltaSeconds)
 				NewLocation.Z = 0;
 				NewLocation.Z = BuildingUserWidgetHandler->CurrentStorey * 312;
 				WallActor->SetActorRelativeLocation(NewLocation);
-				//SnapWall();
 			}
 		}
 	}
@@ -802,27 +794,8 @@ void AArchVizController::SelectWindow() {
 
 }
 
-/// <summary>
-/// //
-/// </summary>
+/// 
 void AArchVizController::BuildingRightMouseLogic() {
-	/*if (BuildingMode == EBuildingMode::Wall) {
-		FVector CursorWorldLocation;
-		FVector CursorWorldDirection;
-		DeprojectMousePositionToWorld(CursorWorldLocation, CursorWorldDirection);
-
-		FHitResult HitResult;
-		FCollisionQueryParams TraceParams(FName(TEXT("LineTrace")), true);
-
-		if (GetWorld()->LineTraceSingleByChannel(HitResult, CursorWorldLocation, CursorWorldLocation + CursorWorldDirection * 10000, ECC_Visibility, TraceParams)) {
-			FVector SpawnLocation_ = HitResult.Location;
-			SpawnLocation_.Z = BuildingUserWidgetHandler->CurrentStorey * 312;
-
-			WallActor = GetWorld()->SpawnActor<AWallActor>(AWallActor::StaticClass(), SpawnLocation_, FRotator::ZeroRotator);
-			bMoveWall = true;
-			WallStartLocation = SpawnLocation_;
-		}
-	}*/
 
 	if (BuildingMode == EBuildingMode::Wall) {
 		if (!bMoveWall) {
@@ -855,9 +828,7 @@ void AArchVizController::NewWall() {
 	WallActor = GetWorld()->SpawnActor<AWallActor>(AWallActor::StaticClass(), FVector::ZeroVector, FRotator::ZeroRotator);
 	WallActor->GenerateSegmentedWalls(BuildingUserWidgetHandler->WallSegment->GetValue());
 }
-/// <summary>
-/// //
-/// </summary>
+/// 
 
 
 void AArchVizController::RotateWall() {
@@ -943,11 +914,14 @@ void AArchVizController::StoreRoofOrFloorPoints(TArray<FVector>& Locations, bool
 
 	if (AWallActor* HitWallActor = Cast<AWallActor>(HitResult.GetActor())) {
 		if (UStaticMeshComponent* HitComponent = Cast<UStaticMeshComponent>(HitResult.GetComponent())) {
-			if (!HitComponent->GetName().Find("UpperWall") || (!bIsRoof && !HitComponent->GetName().Find("LowerWall"))) {
+			if (!HitComponent->GetName().Find("UpperWall") || !HitComponent->GetName().Find("Pillar") || (!bIsRoof && (!HitComponent->GetName().Find("LowerWall") || !HitComponent->GetName().Find("Pillar")))) {
 				FVector WallTopLeft = HitComponent->GetSocketLocation("WallTopLeftSocket");
 				FVector WallTopRight = HitComponent->GetSocketLocation("WallTopRightSocket");
 				FVector HitLocation = HitResult.Location;
 				FVector ClosestPoint = (FVector::Dist(WallTopLeft, HitLocation) < FVector::Dist(WallTopRight, HitLocation)) ? WallTopLeft : WallTopRight;
+				if (!HitComponent->GetName().Find("Pillar")) {
+					ClosestPoint = HitComponent->GetSocketLocation("PillarSocket");
+				}
 
 				if (!bIsRoof)
 					ClosestPoint.Z = BuildingUserWidgetHandler->CurrentStorey * 310;

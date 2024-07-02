@@ -200,9 +200,7 @@ public:
 	UPROPERTY()
 	class UInputAction* BuildingDeleteWall;
 
-	/// <summary>
-	/// /////
-	/// </summary>
+	/// 
 	UPROPERTY()
 	class UInputAction* BuildingMouseDrag;
 
@@ -213,9 +211,7 @@ public:
 	bool bMoveonTickWall=false;
 
 	void ConnectToNearbyWalls();
-	/// <summary>
-	/// /////
-	/// </summary>
+	/// 
 
 	UPROPERTY()
 	AWallActor* WallActor;
@@ -419,12 +415,5 @@ private:
 	void SetInstructionText(FString Text, int time = 2);
 
 	//
-	FVector GridOrigin;
-	float GridSize = 100.0f; // Adjust based on your desired road length
-	TArray<FVector> PlacedRoadEnds;
 
-	FVector SnapToGrid(const FVector& Location);
-	FVector FindNearestRoadEnd(const FVector& Location);
-	void PlaceRoadSegment(const FVector& Start, const FVector& Direction);
-	void PlaceCornerPiece(const FVector& Location, const FVector& Direction);
 };

@@ -16,10 +16,10 @@ AWallActor::AWallActor()
 	{
 		WallMesh = WallMeshFinder.Object;
 	}
-	static ConstructorHelpers::FObjectFinder<UStaticMesh> FillerMeshFinder(TEXT("/Script/Engine.StaticMesh'/Game/ArchVizExplorerContent/StaticMeshes/Filler.Filler'"));
-	if (FillerMeshFinder.Succeeded())
+	static ConstructorHelpers::FObjectFinder<UStaticMesh> PillarMeshFinder(TEXT("/Script/Engine.StaticMesh'/Game/ArchVizExplorerContent/StaticMeshes/Pillar.Pillar'"));
+	if (PillarMeshFinder.Succeeded())
 	{
-		FillerMesh = FillerMeshFinder.Object;
+		PillarMesh = PillarMeshFinder.Object;
 	}
 
 }
@@ -56,14 +56,15 @@ void AWallActor::GenerateSegmentedWalls(int Segments) {
 
 
 	}
+	FString PillarName = "Pillar" + FString::FromInt(NumberofSegments);
 
-	UStaticMeshComponent* FillerWall = NewObject<UStaticMeshComponent>(this);
-	FillerWall->AttachToComponent(RootScene, FAttachmentTransformRules::KeepRelativeTransform);
+	UStaticMeshComponent* PillarWall = NewObject<UStaticMeshComponent>(this,*PillarName);
+	PillarWall->AttachToComponent(RootScene, FAttachmentTransformRules::KeepRelativeTransform);
 
-	FillerWall->SetRelativeLocation(FVector(NumberofSegments*114, 0, 0));
-	FillerWall->RegisterComponentWithWorld(GetWorld());
-	FillerWall->SetStaticMesh(FillerMesh);
-	FillerWall->SetRelativeScale3D(FVector(1.25, 1.25, 1));
+	PillarWall->SetRelativeLocation(FVector(NumberofSegments*114, 0, 0));
+	PillarWall->RegisterComponentWithWorld(GetWorld());
+	PillarWall->SetStaticMesh(PillarMesh);
+	PillarWall->SetRelativeScale3D(FVector(1.25, 1.25, 1));
 
 
 }
