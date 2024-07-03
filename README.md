@@ -79,3 +79,23 @@ The ArchViz Explorer Tool is an Unreal Engine-based application designed to assi
 
 ### 5. Saving and Loading
 - **Project Management**: Save your project state and load it later from the UI.
+
+## Extra Features
+
+### 1. Roof & Floor Construction
+
+- **Four Click Construction**: Users can construct the roof and floor with just four clicks.
+- **Socket Attachment**: The roof and floor get their location based on the nearest click location on the wall's socket.
+- **Preview Feature**: Users are given a preview of the construction before the final placement.
+
+### 2. Storey Increment
+
+- If a roof is added to the current storey, then and only then you can increment the storey. If no roof is added, it will prompt you to add a roof first.
+  
+### 3. Guide
+
+- A comprehensive guide is provided for each mode of construction to help users navigate through the process easily.
+
+### 4. Interactive Instructional Feedback
+
+- This feature provides real-time guidance and alerts, ensuring users understand the validity of their actions and receive feedback on the status of their tasks.
